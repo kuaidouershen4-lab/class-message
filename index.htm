@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>クラス限定特設メッセージサイト</title>
+    <style>
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            background-color: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .container {
+            background-color: #ffffff;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            width: 90%;
+            max-width: 400px;
+            text-align: center;
+        }
+        h1 {
+            font-size: 20px;
+            color: #333;
+            margin-bottom: 20px;
+        }
+        select, input, .btn {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            box-sizing: border-box;
+            font-size: 16px;
+        }
+        .btn {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .btn:hover {
+            background-color: #0056b3;
+        }
+        .message-box {
+            display: none;
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #e9ecef;
+            border-left: 5px solid #28a745;
+            border-radius: 4px;
+            text-align: left;
+            white-space: pre-wrap;
+            font-size: 16px;
+            color: #495057;
+        }
+        /* 辛い時用のボタンデザイン */
+        .secret-btn {
+            display: none;
+            margin-top: 25px;
+            background-color: #ffc107;
+            color: #333;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .secret-btn:hover {
+            background-color: #e0a800;
+        }
+        /* 辛い時用のメッセージデザイン */
+        .secret-message-box {
+            display: none;
+            margin-top: 15px;
+            padding: 15px;
+            background-color: #fff3cd;
+            border-left: 5px solid #ffc107;
+            border-radius: 4px;
+            text-align: left;
+            white-space: pre-wrap;
+            font-size: 16px;
+            color: #856404;
+        }
+        .error {
+            color: #dc3545;
+            font-size: 14px;
+            display: none;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- ログイン画面 -->
+    <div id="login-form">
+        <h1>クラスみんなへのメッセージ</h1>
+        
+        <select id="name-select">
+            <option value="">-- 自分の名前を選んでね --</option>
+            <option value="student1">A君（出席番号1）</option>
+            <option value="student2">Bさん（出席番号2）</option>
+            <option value="student3">C君（出席番号3）</option>
+            <!-- ここをコピーして28人分に増やせます -->
+        </select>
+
+        <input type="password" id="password-input" placeholder="パスワードを入力">
+        
+        <button class="btn" onclick="checkLogin()">ログイン</button>
+        <p id="error-msg" class="error">名前またはパスワードが違います</p>
+    </div>
+
+    <!-- 通常メッセージが表示されるエリア -->
+    <div id="message-area" class="message-box"></div>
+
+    <!-- 辛い時に開いてねボタン -->
+    <button id="secret-button" class="btn secret-btn" onclick="showSecretMessage()">辛い時に開いてね（見る）</button>
+
+    <!-- 辛い時用メッセージが表示されるエリア -->
+    <div id="secret-message-area" class="secret-message-box"></div>
+</div>
+
+<script>
+    // 現在ログインしている生徒のデータを一時保存する変数
+    let currentStudentData = null;
+
+    // 【データ設定】28人分のデータをここに設定します
+    const database = {
+        "student1": {
+            password: "pass1",
+            message: "A君へ\nいつもクラスを盛り上げてくれてありがとう！文化祭での活躍最高だったよ。",
+            secretMessage: "【A君へ 辛い時のメッセージ】\nしんどい時は無理しなくていいからね。いつでも連絡してな！応援してるよ。"
+        },
+        "student2": {
+            password: "pass2",
+            message: "Bさんへ\n委員会でお世話になりました。いつも優しく声をかけてくれて嬉しかったです！",
+            secretMessage: "【Bさんへ 辛い時のメッセージ】\nいつも頑張り屋さんなBさん。たまには肩の力を抜いて休んでね。"
+        },
+        "student3": {
+            password: "pass3",
+            message: "C君へ\n席が近かったとき楽しかったね！受験勉強がんばろう！",
+            secretMessage: "【C君へ 辛い時のメッセージ】\n結果がどうであれ、C君が頑張ってきたことはみんな知ってるよ。自信持って！"
+        }
+        // 同様の手順で28人分までカンマ(,)で区切って追加できます
+    };
+
+    function checkLogin() {
+        const selectedStudent = document.getElementById("name-select").value;
+        const inputPassword = document.getElementById("password-input").value;
+        const errorMsg = document.getElementById("error-msg");
+        const messageArea = document.getElementById("message-area");
+        const secretButton = document.getElementById("secret-button");
+        const loginForm = document.getElementById("login-form");
+
+        if (!selectedStudent || !inputPassword) {
+            errorMsg.innerText = "名前とパスワードを両方入力してください";
+            errorMsg.style.display = "block";
+            return;
+        }
+
+        const userData = database[selectedStudent];
+
+        if (userData && userData.password === inputPassword) {
+            errorMsg.style.display = "none";
+            loginForm.style.display = "none"; 
+            
+            // データを保持
+            currentStudentData = userData;
+
+            // 通常メッセージを表示
+            messageArea.innerText = userData.message;
+            messageArea.style.display = "block";
+
+            // 「辛い時に開いてね」ボタンを表示
+            secretButton.style.display = "block";
+        } else {
+            errorMsg.innerText = "パスワードが違います";
+            errorMsg.style.display = "block";
+        }
+    }
+
+    // 「辛い時に開いてね」ボタンを押した時の処理
+    function showSecretMessage() {
+        const secretMessageArea = document.getElementById("secret-message-area");
+        const secretButton = document.getElementById("secret-button");
+        
+        if (currentStudentData) {
+            secretMessageArea.innerText = currentStudentData.secretMessage;
+            secretMessageArea.style.display = "block";
+            secretButton.style.display = "none"; // 一度押したらボタンは隠す
+        }
+    }
+</script>
+
+</body>
+</html>
